@@ -489,6 +489,12 @@ price = V.mean()
           legend pos=north east, legend style={font=\tiny},
           xtick={80,90,100,105,110,120},
         ]
+          % Intrinsic value (payoff at maturity): max(K - S, 0)
+          \addplot[thick, color=btgreen, dashed, domain=75:105, samples=100]
+            {105 - x};
+          \addplot[thick, color=btgreen, dashed, domain=105:125, samples=5]
+            {0};
+          \addlegendentry{Intrinsic value $\max(K{-}S,0)$}
           % European put (BS)
           \addplot[thick, color=euroblue, mark=*, mark size=1.5pt]
             coordinates {(80,21.079)(90,13.500)(100,7.900)(110,4.249)(120,2.122)};
@@ -519,8 +525,13 @@ price = V.mean()
 
       \bigskip
       \footnotesize
+      The \textcolor{btgreen}{dashed line} is the intrinsic value
+      $\max(K{-}S_0,0)$---the payoff if exercised immediately.
+      Both option prices lie \emph{above} it (time value $\ge 0$),
+      except the American put at $S_0=80$ where
+      immediate exercise is already optimal.
       Premium is largest when the option is \textbf{deep in-the-money}:
-      immediate exercise yields $K-S_0$ cash now, which earns interest.
+      receiving $K-S_0$ now and investing at $r$ outweighs waiting.
       At $S_0=80$, the American put equals its intrinsic value
       $K-S_0=25$ (immediate exercise is optimal).
   \end{columns}
