@@ -6,7 +6,14 @@ using Geometric Brownian Motion (GBM) for stock price dynamics.
 """
 
 from .gbm import GBMSimulator, GBMParameters
-from .payoffs import Payoff, EuropeanCallPayoff, EuropeanPutPayoff
+from .payoffs import (
+    Payoff,
+    EuropeanCallPayoff,
+    EuropeanPutPayoff,
+    AmericanPayoff,
+    AmericanCallPayoff,
+    AmericanPutPayoff,
+)
 from .pricing import MonteCarloEngine
 
 __all__ = [
@@ -15,5 +22,8 @@ __all__ = [
     "Payoff",
     "EuropeanCallPayoff",
     "EuropeanPutPayoff",
+    "AmericanPayoff",
+    "AmericanCallPayoff",
+    "AmericanPutPayoff",
     "MonteCarloEngine",
 ]

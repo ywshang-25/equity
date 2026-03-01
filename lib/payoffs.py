@@ -108,6 +108,84 @@ class EuropeanPutPayoff(Payoff):
         return np.maximum(self.strike - terminal_prices, 0.0)
 
 
+class AmericanPayoff(Payoff):
+    """
+    Abstract base class for American option payoffs.
+
+    Extends Payoff with an intrinsic_value() method used by the
+    Longstaff-Schwartz engine to make early-exercise decisions at each
+    time step.  The evaluate() method returns the terminal intrinsic
+    value and is provided here so subclasses only need to implement
+    intrinsic_value().
+    """
+
+    payoff_type: PayoffType = PayoffType.PATH_DEPENDENT
+
+    @abstractmethod
+    def intrinsic_value(self, S: np.ndarray) -> np.ndarray:
+        """
+        Immediate exercise (intrinsic) value at stock price S.
+
+        Args:
+            S: Stock prices with shape (n_paths,)
+
+        Returns:
+            Intrinsic values with shape (n_paths,)
+        """
+        pass
+
+    def evaluate(
+        self,
+        paths: np.ndarray,
+        time_grid: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        """Evaluate terminal intrinsic value (ignoring early exercise)."""
+        terminal_prices = paths if paths.ndim == 1 else paths[:, -1]
+        return self.intrinsic_value(terminal_prices)
+
+
+@dataclass
+class AmericanCallPayoff(AmericanPayoff):
+    """
+    American call option payoff: max(S - K, 0), exercisable at any time.
+
+    Attributes:
+        strike: Strike price K
+    """
+
+    strike: float
+    payoff_type: PayoffType = PayoffType.PATH_DEPENDENT
+
+    def __post_init__(self):
+        if self.strike < 0:
+            raise ValueError("Strike price cannot be negative")
+
+    def intrinsic_value(self, S: np.ndarray) -> np.ndarray:
+        """Intrinsic value: max(S - K, 0)"""
+        return np.maximum(S - self.strike, 0.0)
+
+
+@dataclass
+class AmericanPutPayoff(AmericanPayoff):
+    """
+    American put option payoff: max(K - S, 0), exercisable at any time.
+
+    Attributes:
+        strike: Strike price K
+    """
+
+    strike: float
+    payoff_type: PayoffType = PayoffType.PATH_DEPENDENT
+
+    def __post_init__(self):
+        if self.strike < 0:
+            raise ValueError("Strike price cannot be negative")
+
+    def intrinsic_value(self, S: np.ndarray) -> np.ndarray:
+        """Intrinsic value: max(K - S, 0)"""
+        return np.maximum(self.strike - S, 0.0)
+
+
 class CustomPayoff(Payoff):
     """
     Custom payoff defined by a user-provided function.

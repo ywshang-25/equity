@@ -8,6 +8,9 @@ from lib.payoffs import (
     PayoffType,
     EuropeanCallPayoff,
     EuropeanPutPayoff,
+    AmericanPayoff,
+    AmericanCallPayoff,
+    AmericanPutPayoff,
     CustomPayoff,
 )
 
@@ -250,6 +253,93 @@ class TestCustomPayoff:
         custom.evaluate(paths, time_grid)
 
         np.testing.assert_array_equal(received_time_grid[0], time_grid)
+
+
+class TestAmericanCallPayoff:
+    """Tests for AmericanCallPayoff."""
+
+    def test_payoff_type(self):
+        call = AmericanCallPayoff(strike=100)
+        assert call.payoff_type == PayoffType.PATH_DEPENDENT
+
+    def test_negative_strike_raises(self):
+        with pytest.raises(ValueError, match="Strike price cannot be negative"):
+            AmericanCallPayoff(strike=-10)
+
+    def test_intrinsic_value_itm(self):
+        call = AmericanCallPayoff(strike=100)
+        S = np.array([110.0, 120.0, 150.0])
+        np.testing.assert_array_equal(call.intrinsic_value(S), [10, 20, 50])
+
+    def test_intrinsic_value_otm(self):
+        call = AmericanCallPayoff(strike=100)
+        S = np.array([80.0, 90.0, 100.0])
+        np.testing.assert_array_equal(call.intrinsic_value(S), [0, 0, 0])
+
+    def test_evaluate_uses_terminal_price(self):
+        """evaluate() should apply intrinsic_value to the last path column."""
+        call = AmericanCallPayoff(strike=100)
+        paths = np.array([
+            [100, 95, 115],  # Terminal: 115 -> 15
+            [100, 110, 90],  # Terminal: 90  -> 0
+        ])
+        np.testing.assert_array_equal(call.evaluate(paths), [15, 0])
+
+    def test_is_american_payoff_subclass(self):
+        assert isinstance(AmericanCallPayoff(strike=100), AmericanPayoff)
+
+
+class TestAmericanPutPayoff:
+    """Tests for AmericanPutPayoff."""
+
+    def test_payoff_type(self):
+        put = AmericanPutPayoff(strike=100)
+        assert put.payoff_type == PayoffType.PATH_DEPENDENT
+
+    def test_negative_strike_raises(self):
+        with pytest.raises(ValueError, match="Strike price cannot be negative"):
+            AmericanPutPayoff(strike=-10)
+
+    def test_intrinsic_value_itm(self):
+        put = AmericanPutPayoff(strike=100)
+        S = np.array([80.0, 90.0, 50.0])
+        np.testing.assert_array_equal(put.intrinsic_value(S), [20, 10, 50])
+
+    def test_intrinsic_value_otm(self):
+        put = AmericanPutPayoff(strike=100)
+        S = np.array([110.0, 120.0, 100.0])
+        np.testing.assert_array_equal(put.intrinsic_value(S), [0, 0, 0])
+
+    def test_evaluate_uses_terminal_price(self):
+        put = AmericanPutPayoff(strike=100)
+        paths = np.array([
+            [100, 105, 90],  # Terminal: 90 -> 10
+            [100, 95, 110],  # Terminal: 110 -> 0
+        ])
+        np.testing.assert_array_equal(put.evaluate(paths), [10, 0])
+
+    def test_is_american_payoff_subclass(self):
+        assert isinstance(AmericanPutPayoff(strike=100), AmericanPayoff)
+
+
+class TestAmericanPayoffAbstractClass:
+    """Test that AmericanPayoff is properly abstract."""
+
+    def test_cannot_instantiate_without_intrinsic_value(self):
+        class IncompleteAmerican(AmericanPayoff):
+            pass
+
+        with pytest.raises(TypeError):
+            IncompleteAmerican()
+
+    def test_concrete_subclass_works(self):
+        class ConcreteAmerican(AmericanPayoff):
+            def intrinsic_value(self, S):
+                return np.maximum(S - 100, 0)
+
+        payoff = ConcreteAmerican()
+        S = np.array([110.0, 90.0])
+        np.testing.assert_array_equal(payoff.intrinsic_value(S), [10, 0])
 
 
 class TestPayoffAbstractClass:
