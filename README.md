@@ -95,9 +95,15 @@ result = engine.price(asian_call, t=1.0)
 ## Dependencies
 
 - Python 3.10+
-- NumPy
-- SciPy (Black-Scholes `norm.cdf` only)
-- pytest (tests)
+- NumPy >= 2.0
+- SciPy >= 1.10
+- pytest >= 7.0 (tests only)
+
+Install with:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Running the example
 
