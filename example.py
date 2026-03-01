@@ -2,8 +2,8 @@
 """
 Example usage of the equity simulation library.
 
-Demonstrates pricing European call and put options using Monte Carlo
-simulation and compares with Black-Scholes analytical prices.
+Demonstrates pricing European and American call and put options using
+Monte Carlo simulation and compares with analytical/benchmark prices.
 """
 
 import numpy as np
@@ -13,10 +13,17 @@ from lib import (
     GBMParameters,
     EuropeanCallPayoff,
     EuropeanPutPayoff,
+    AmericanCallPayoff,
+    AmericanPutPayoff,
     MonteCarloEngine,
 )
 from lib.payoffs import CustomPayoff, PayoffType
-from lib.pricing import black_scholes_call, black_scholes_put
+from lib.pricing import (
+    black_scholes_call,
+    black_scholes_put,
+    binomial_tree_american_call,
+    binomial_tree_american_put,
+)
 
 
 def main():
@@ -84,6 +91,36 @@ def main():
     print(f"  C - P = {parity_lhs:.6f}")
     print(f"  S0 - K*exp(-rT) = {parity_rhs:.6f}")
     print(f"  Difference: {abs(parity_lhs - parity_rhs):.6f}")
+
+    # Price American Call
+    print("\n" + "-" * 60)
+    print("American Call Option (Longstaff-Schwartz)")
+    print("-" * 60)
+
+    am_call_payoff = AmericanCallPayoff(strike=k)
+    am_call_result = engine.price_american(am_call_payoff, t)
+    bt_call = binomial_tree_american_call(s0, k, t, r, sigma)
+
+    print(f"  LSM Monte Carlo:  {am_call_result}")
+    print(f"  Binomial Tree:    {bt_call:.6f}")
+    print(f"  Difference:       {abs(am_call_result.price - bt_call):.6f}")
+    print(f"  vs European Call: {abs(am_call_result.price - bs_call):.6f} "
+          f"(should be ~0 for no-dividend stock)")
+
+    # Price American Put
+    print("\n" + "-" * 60)
+    print("American Put Option (Longstaff-Schwartz)")
+    print("-" * 60)
+
+    am_put_payoff = AmericanPutPayoff(strike=k)
+    am_put_result = engine.price_american(am_put_payoff, t)
+    bt_put = binomial_tree_american_put(s0, k, t, r, sigma)
+
+    print(f"  LSM Monte Carlo:  {am_put_result}")
+    print(f"  Binomial Tree:    {bt_put:.6f}")
+    print(f"  Difference:       {abs(am_put_result.price - bt_put):.6f}")
+    print(f"  Early exercise premium: {am_put_result.price - put_result.price:.6f} "
+          f"(American - European)")
 
     # Demonstrate custom exotic payoff: Digital Call
     print("\n" + "-" * 60)
